@@ -9,7 +9,8 @@ from qiskit.transpiler.passes import Unroller
 from qiskit.utils import QuantumInstance, algorithm_globals
 from qiskit.visualization import plot_histogram
 
-provider = IBMQ.load_account()
+
+# provider = IBMQ.load_account()
 
 
 def initialize_s(qc, qubits):
@@ -144,7 +145,7 @@ def design_partial_grover_circuit(n, m, vector_j, state):
     return grover_circuit
 
 
-def classic_grover_stats(qcircuit, state, n):
+def classic_grover_stats(qcircuit, state, n, back):
     qubit_count = n + 1
     m = len(state)
     #     first we evolve exact state
@@ -157,18 +158,19 @@ def classic_grover_stats(qcircuit, state, n):
     for i in range(m):
         strState += str(state[m - i - 1])
     P_theoretical = 0
-    print(dict_)
+    # print(dict_)
     for strin in dict_:
         if strin[(qubit_count - m):] == strState:
             P_theoretical += dict_[strin]
-    print("P_theoretical: ", P_theoretical)
+    # print("P_theoretical: ", P_theoretical)
     #     now for simulation. We will mimimc noise model from real backend device ibmq_quito
-    back = provider.get_backend("ibmq_quito")
+    # back = provider.get_backend("ibmq_quito")
     #     now we add measures to our circuit
     qcircuit.measure(range(n), range(n - 1, -1, -1))
     optimized_3 = transpile(qcircuit, backend=back, seed_transpiler=11, optimization_level=3)
     print('gates = ', optimized_3.count_ops())
-    print('depth = ', optimized_3.depth())
+    # print('depth = ', optimized_3.depth())
+    depth = optimized_3.depth()
     backend = AerSimulator.from_backend(back)
     result = backend.run(optimized_3).result()
     #     find P_actual
@@ -185,15 +187,17 @@ def classic_grover_stats(qcircuit, state, n):
         else:
             if max_ < counts[strin]:
                 max_ = counts[strin]
-    Pactual = res / summ
+    P_actual = res / summ
     S = res / max_
-    print("S: ", S)
-    print(summ, res)
-    print("P_actual: ", res * 100 / summ, "%")
-    return plot_histogram(counts, title='counts on quito')
+    # print("S: ", S)
+    # print(summ, res)
+    # print("P_actual: ", res * 100 / summ, "%")
+    # return plot_histogram(counts, title='counts on quito')
+#     return (Pt, Pactual, selectivity, depth, plot_histogram)
+    return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def QPSA_stats(qcircuit, partial_state, n, measure_first=True):
+def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
     #     when measure_first value id false we will measure the last m qubits instead of first.
     #     Thus the length of partial_state should be m
 
@@ -220,13 +224,12 @@ def QPSA_stats(qcircuit, partial_state, n, measure_first=True):
         strState = ''
         for i in range(m):
             strState += str(partial_state[m - i - 1])
-        print(dict_)
         for strin in dict_:
             if strin[(qubit_count - n):(qubit_count - n) + m] == strState:
                 P_theoretical += dict_[strin]
         print("P_theoretical: ", P_theoretical)
     # now for simulation. We will mimimc noise model from real backend device ibmq_quito
-    back = provider.get_backend("ibmq_quito")
+    # back = provider.get_backend("ibmq_quito")
     if measure_first:
         #     now we add measures to our circuit
         qcircuit.measure(range(m), range(m - 1, -1, -1))
@@ -263,8 +266,18 @@ def QPSA_stats(qcircuit, partial_state, n, measure_first=True):
     return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state):
+def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state, back):
     first_stage_circuit = design_partial_grover_circuit(n, m1, vector_j1, state)
     partial_state = state[:(n - m1)]
-    (P_theoretical, P_actual, S, _) = QPSA_Stats(first_stage_circuit, partial_state, n, m1)
+    (P_theoretical_first, P_actual_first, S_first, depth_first, _) = QPSA_stats(first_stage_circuit,
+                                                                                partial_state, n, back)
     second_stage_circuit = design_partial_grover_circuit(n, m2, vector_j2, state)
+    partial_state = state[(n - m1):]
+    (P_theoretical_second, P_actual_second, S_second, depth_second, _) = QPSA_stats(second_stage_circuit,
+                                                                                    partial_state,
+                                                                                    n, back, False)
+    #     return (selectivity, R_IBM, depth, "expected deapth") expected deapth defined as goes
+    return (min([S_first, S_second]),
+            P_actual_first * P_actual_second / (P_theoretical_first * P_theoretical_second),
+            depth_first + depth_second,
+            (depth_first + depth_second) / (P_actual_first * P_actual_second))
