@@ -1,12 +1,6 @@
-from qiskit import BasicAer, QuantumCircuit, ClassicalRegister, QuantumRegister, IBMQ, Aer, assemble, transpile, execute
-from qiskit.algorithms import NumPyMinimumEigensolver, VQE
-from qiskit.algorithms.optimizers import SPSA
-from qiskit.circuit.library import TwoLocal
+from qiskit import QuantumCircuit, QuantumRegister, transpile
 from qiskit.providers.aer import AerSimulator
-from qiskit.quantum_info import Pauli, Statevector
 from qiskit.quantum_info import Statevector
-from qiskit.transpiler.passes import Unroller
-from qiskit.utils import QuantumInstance, algorithm_globals
 from qiskit.visualization import plot_histogram
 
 
@@ -19,6 +13,25 @@ def initialize_s(qc, qubits):
         qc.h(q)
     return qc
 
+
+def initialize_Gq(qc, qubits, state, q):
+    # first q qubits will be initialized as in state
+    for i in range(q):
+        if state[i] == 1:
+            qc.x(i)
+    for i in range(q, len(qubits)):
+        qc.h(i)
+    return qc
+
+
+def multi_controlled_toffoli(n):
+    qc = QuantumCircuit(n)
+    # Apply transformation |s> -> |00..0> (H-gates)
+
+    # We will return the diffuser as a gate
+    U_s = qc.to_gate()
+    U_s.name = "T$"
+    return U_s
 
 def diffuser(nqubits):
     qc = QuantumCircuit(nqubits)
@@ -78,7 +91,7 @@ def partial_diffuser(nqubits, m):
 
 # initialize the Oracle in single state |s> (the state is pure and given in form of [010011...] of len = n)
 # additional qubit should be realized as (qc.initialize([1, -1]/np.sqrt(2), output_qubit))
-def oracle(state, n: int):
+def oracle_acilla(state, n: int):
     var_qubits = QuantumRegister(n, name='v')
     output_qubit = QuantumRegister(1, name='out')  # additional qubit
     qc = QuantumCircuit(var_qubits, output_qubit)
@@ -95,13 +108,36 @@ def oracle(state, n: int):
             qc.x(i)
 
     Oracle = qc.to_gate()
+    Oracle.name = "O_anc"
+    return Oracle
+
+
+def oracle(state, n: int):
+    var_qubits = QuantumRegister(n, name='v')
+    qc = QuantumCircuit(var_qubits)
+    for i in range(n):
+        if state[i] == 0:
+            qc.x(i)
+
+    # Flip 'output' bit if all clauses are satisfied
+    # Flip 'output' bit if all clauses are satisfied
+    # Do multi-controlled-Z gate
+    qc.h(n - 1)
+    qc.mct(list(range(n - 1)), n - 1)  # multi-controlled-toffoli
+    qc.h(n - 1)
+
+    for i in range(n):
+        if state[i] == 0:
+            qc.x(i)
+
+    Oracle = qc.to_gate()
     Oracle.name = "O"
     return Oracle
 
 
 def grover_operator(n, state):
     grover = QuantumCircuit(n + 1)
-    grover.append(oracle(state, n), range(n + 1))
+    grover.append(oracle(state, n), range(n))
     grover.append(diffuser(n), range(n))
     Grover = grover.to_gate()
     Grover.name = "G_" + str(n)
@@ -110,7 +146,7 @@ def grover_operator(n, state):
 
 def local_grover_operator(n, m, state):
     grover = QuantumCircuit(n + 1)
-    grover.append(oracle(state, n), range(n + 1))
+    grover.append(oracle(state, n), range(n))
     grover.append(partial_diffuser(n, m), range(n))
     Grover = grover.to_gate()
     Grover.name = "G_" + str(n) + "_" + str(m)
@@ -127,11 +163,9 @@ def design_grover_circuit(n, operator_count, state):
     return grover_circuit
 
 
-def design_partial_grover_circuit(n, m, vector_j, state):
+def partial_grover_circuit(n, m, vector_j, state, grover_circuit):
     #     j =[j1, j2, j3 ...] powers for grover operators global and partial going in turn
     #     last number j_q - always for the local grover operator. Will stand first in the circuit.
-    grover_circuit = QuantumCircuit(n + 1, n)
-    grover_circuit = initialize_s(grover_circuit, range(n))
     grover_circuit.x(n)
     grover_circuit.h(n)
     partial = True
@@ -145,7 +179,19 @@ def design_partial_grover_circuit(n, m, vector_j, state):
     return grover_circuit
 
 
-def classic_grover_stats(qcircuit, state, n, back):
+def design_partial_grover_circuit(n, m, vector_j, state):
+    grover_circuit = QuantumCircuit(n + 1, n)
+    grover_circuit = initialize_s(grover_circuit, range(n))
+    return partial_grover_circuit(n, m, vector_j, state, grover_circuit)
+
+
+def design_Gq_partial_grover_circuit(n, m, vector_j, state, q):
+    grover_circuit = QuantumCircuit(n + 1, n)
+    grover_circuit = initialize_Gq(grover_circuit, range(n), state, q)
+    return partial_grover_circuit(n, m, vector_j, state, grover_circuit)
+
+
+def classic_grover_stats(qcircuit, state, n, simulator):
     qubit_count = n + 1
     m = len(state)
     #     first we evolve exact state
@@ -167,11 +213,11 @@ def classic_grover_stats(qcircuit, state, n, back):
     # back = provider.get_backend("ibmq_quito")
     #     now we add measures to our circuit
     qcircuit.measure(range(n), range(n - 1, -1, -1))
-    optimized_3 = transpile(qcircuit, backend=back, seed_transpiler=11, optimization_level=3)
+    optimized_3 = transpile(qcircuit, backend=simulator, seed_transpiler=11, optimization_level=3)
     print('gates = ', optimized_3.count_ops())
     # print('depth = ', optimized_3.depth())
     depth = optimized_3.depth()
-    backend = AerSimulator.from_backend(back)
+    backend = simulator
     result = backend.run(optimized_3).result()
     #     find P_actual
     strState = ''.join(str(e) for e in state)
@@ -193,11 +239,18 @@ def classic_grover_stats(qcircuit, state, n, back):
     # print(summ, res)
     # print("P_actual: ", res * 100 / summ, "%")
     # return plot_histogram(counts, title='counts on quito')
-#     return (Pt, Pactual, selectivity, depth, plot_histogram)
+    #     return (Pt, Pactual, selectivity, depth, plot_histogram)
     return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
+def hybrid_design_and_test(n, l, m, vector_j, state, simulator):
+    # l - number of classically iterated qubits
+    grover_circuit = design_Gq_partial_grover_circuit(n, m, vector_j, state, l)
+    (P_theoretical, P_actual, S, depth, histo) = QPSA_stats(grover_circuit, state[n - m:], n, simulator, False)
+    return ((1 / (2 ** l)) * P_theoretical, (1 / (2 ** l)) * P_actual, S, depth, histo)
+
+
+def QPSA_stats(qcircuit, partial_state, n, simulator, measure_first=True):
     #     when measure_first value id false we will measure the last m qubits instead of first.
     #     Thus the length of partial_state should be m
 
@@ -219,7 +272,7 @@ def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
         for strin in dict_:
             if strin[(qubit_count - m):] == strState:
                 P_theoretical += dict_[strin]
-        print("P_theoretical: ", P_theoretical)
+        # print("P_theoretical: ", P_theoretical)
     else:
         strState = ''
         for i in range(m):
@@ -227,7 +280,7 @@ def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
         for strin in dict_:
             if strin[(qubit_count - n):(qubit_count - n) + m] == strState:
                 P_theoretical += dict_[strin]
-        print("P_theoretical: ", P_theoretical)
+        # print("P_theoretical: ", P_theoretical)
     # now for simulation. We will mimimc noise model from real backend device ibmq_quito
     # back = provider.get_backend("ibmq_quito")
     if measure_first:
@@ -236,11 +289,10 @@ def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
     else:
         qcircuit.measure(range((n - m), n), range(m - 1, -1, -1))
 
-    optimized_3 = transpile(qcircuit, backend=back, seed_transpiler=11, optimization_level=3)
-    print('gates = ', optimized_3.count_ops())
+    optimized_3 = transpile(qcircuit, backend=simulator, seed_transpiler=11, optimization_level=3)
+    # print('gates = ', optimized_3.count_ops())
     depth = optimized_3.depth()
-    print('depth = ', depth)
-    backend = AerSimulator.from_backend(back)
+    backend = simulator
     result = backend.run(optimized_3).result()
 
     #     find P_actual
@@ -259,25 +311,28 @@ def QPSA_stats(qcircuit, partial_state, n, back, measure_first=True):
 
     P_actual = res / summ
     S = res / max_
-    print("S: ", S)
-    print(summ, res)
-    print("P_actual: ", res * 100 / summ, "%")
+    # print("S: ", S)
+    # print(summ, res)
+    # print("P_actual: ", res * 100 / summ, "%")
     #     return (Pt, Pactual, selectivity, depth, plot_histogram)
     return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state, back):
+def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state, simulator):
     first_stage_circuit = design_partial_grover_circuit(n, m1, vector_j1, state)
     partial_state = state[:(n - m1)]
     (P_theoretical_first, P_actual_first, S_first, depth_first, _) = QPSA_stats(first_stage_circuit,
-                                                                                partial_state, n, back)
-    second_stage_circuit = design_partial_grover_circuit(n, m2, vector_j2, state)
+                                                                                partial_state, n, simulator)
+    second_stage_circuit = design_Gq_partial_grover_circuit(n, m2, vector_j2, state, n - m1)
     partial_state = state[(n - m1):]
     (P_theoretical_second, P_actual_second, S_second, depth_second, _) = QPSA_stats(second_stage_circuit,
                                                                                     partial_state,
-                                                                                    n, back, False)
+                                                                                    n, simulator, False)
     #     return (selectivity, R_IBM, depth, "expected deapth") expected deapth defined as goes
-    return (min([S_first, S_second]),
-            P_actual_first * P_actual_second / (P_theoretical_first * P_theoretical_second),
-            depth_first + depth_second,
-            (depth_first + depth_second) / (P_actual_first * P_actual_second))
+    # return (min([S_first, S_second]),
+    #         P_actual_first * P_actual_second / (P_theoretical_first * P_theoretical_second),
+    #         depth_first + depth_second,
+    #         (depth_first + depth_second) / (P_actual_first * P_actual_second))
+    #     return (Pt, Pactual, selectivity, depth, plot_histogram)
+    return (P_theoretical_first * P_theoretical_second, P_actual_first * P_actual_second, min([S_first, S_second]),
+            depth_first + depth_second, None)
