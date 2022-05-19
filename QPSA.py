@@ -1,8 +1,8 @@
 from qiskit import QuantumCircuit, QuantumRegister, transpile
-from qiskit.providers.aer import AerSimulator
+# from qiskit.providers.aer import AerSimulator
 from qiskit.quantum_info import Statevector
 from qiskit.visualization import plot_histogram
-
+from qiskit import execute
 
 # provider = IBMQ.load_account()
 
@@ -25,13 +25,17 @@ def initialize_Gq(qc, qubits, state, q):
 
 
 def multi_controlled_toffoli(n):
-    qc = QuantumCircuit(n)
+    #     (n-1) - number of controlled qubits
+    #     N - number of resets in a single reset operation
+    qc = QuantumCircuit(n + 2)
     # Apply transformation |s> -> |00..0> (H-gates)
-
+    for i in range(n - 1):
+        qc.append(both(N), [i, n, n + 1])
+    qc.cx(n, n - 1)
     # We will return the diffuser as a gate
-    U_s = qc.to_gate()
-    U_s.name = "T$"
-    return U_s
+    #     U_s = qc.to_gate()
+    qc.name = "T$"
+    return qc
 
 def diffuser(nqubits):
     qc = QuantumCircuit(nqubits)
@@ -191,7 +195,7 @@ def design_Gq_partial_grover_circuit(n, m, vector_j, state, q):
     return partial_grover_circuit(n, m, vector_j, state, grover_circuit)
 
 
-def classic_grover_stats(qcircuit, state, n, simulator):
+def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=None):
     qubit_count = n + 1
     m = len(state)
     #     first we evolve exact state
@@ -217,8 +221,18 @@ def classic_grover_stats(qcircuit, state, n, simulator):
     print('gates = ', optimized_3.count_ops())
     # print('depth = ', optimized_3.depth())
     depth = optimized_3.depth()
+
     backend = simulator
-    result = backend.run(optimized_3).result()
+    result = None
+    if execution_parameters == None:
+        result = backend.run(optimized_3).result()
+    else:
+        (coupling_map, basis_gates, noise_model) = execution_parameters
+        result = execute(optimized_3, backend,
+                    coupling_map=coupling_map,
+                    basis_gates=basis_gates,
+                    noise_model=noise_model).result()
+
     #     find P_actual
     strState = ''.join(str(e) for e in state)
     m = len(state)
@@ -250,7 +264,7 @@ def hybrid_design_and_test(n, l, m, vector_j, state, simulator):
     return ((1 / (2 ** l)) * P_theoretical, (1 / (2 ** l)) * P_actual, S, depth, histo)
 
 
-def QPSA_stats(qcircuit, partial_state, n, simulator, measure_first=True):
+def QPSA_stats(qcircuit, partial_state, n, simulator, measure_first=True, execution_parameters=None):
     #     when measure_first value id false we will measure the last m qubits instead of first.
     #     Thus the length of partial_state should be m
 
@@ -292,8 +306,17 @@ def QPSA_stats(qcircuit, partial_state, n, simulator, measure_first=True):
     optimized_3 = transpile(qcircuit, backend=simulator, seed_transpiler=11, optimization_level=3)
     # print('gates = ', optimized_3.count_ops())
     depth = optimized_3.depth()
+
     backend = simulator
-    result = backend.run(optimized_3).result()
+    result = None
+    if execution_parameters == None:
+        result = backend.run(optimized_3).result()
+    else:
+        (coupling_map, basis_gates, noise_model) = execution_parameters
+        result = execute(optimized_3, backend,
+                         coupling_map=coupling_map,
+                         basis_gates=basis_gates,
+                         noise_model=noise_model).result()
 
     #     find P_actual
     strState = ''.join(str(e) for e in partial_state)
