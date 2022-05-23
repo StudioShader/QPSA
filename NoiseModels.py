@@ -4,10 +4,12 @@ from qiskit.providers.aer.noise import depolarizing_error
 from qiskit.providers.aer.noise import thermal_relaxation_error
 import numpy as np
 
+
 class NoiseModels:
-    def __int__(self, constant):
+    def __init__(self, constant):
         # constant should be between _ and _
-        this.const = constant
+        self.const = constant
+
     def initialize_bit_flip_noise(self):
         # Example error probabilities
         p_reset = 0.03
@@ -28,10 +30,14 @@ class NoiseModels:
         noise_bit_flip.add_all_qubit_quantum_error(error_gate2, ["cx"])
 
         return noise_bit_flip
+
     def initialize_thermal_noise(self):
         # T1 and T2 values for qubits 0-3
         T1s = np.random.normal(50e3, 10e3, 4)  # Sampled from normal distribution mean 50 microsec
         T2s = np.random.normal(70e3, 10e3, 4)  # Sampled from normal distribution mean 50 microsec
+
+        T1s = [round(x * self.const, 4) for x in T1s]
+        T2s = [round(x * self.const, 4) for x in T2s]
 
         # Truncate random T2s <= T1s
         T2s = np.array([min(T2s[j], 2 * T1s[j]) for j in range(4)])

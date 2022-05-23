@@ -4,6 +4,7 @@ from qiskit.quantum_info import Statevector
 from qiskit.visualization import plot_histogram
 from qiskit import execute
 
+
 # provider = IBMQ.load_account()
 
 
@@ -24,10 +25,24 @@ def initialize_Gq(qc, qubits, state, q):
     return qc
 
 
-def multi_controlled_toffoli(n):
+def both(N):
+    #     N - number of resets in a single reset operation
+    qc = QuantumCircuit(3)
+    # Apply transformation |s> -> |00..0> (H-gates)
+    qc.ccx(0, 1, 2)
+    qc.reset([1] * N)
+    qc.cx(2, 1)
+    qc.reset([2] * N)
+    # We will return the diffuser as a gate
+    #     U_s = qc.to_gate()
+    qc.name = "Bc$"
+    return qc
+
+def multi_controlled_toffoli(n, N):
     #     (n-1) - number of controlled qubits
     #     N - number of resets in a single reset operation
     qc = QuantumCircuit(n + 2)
+    qc.x(n)
     # Apply transformation |s> -> |00..0> (H-gates)
     for i in range(n - 1):
         qc.append(both(N), [i, n, n + 1])
@@ -36,6 +51,7 @@ def multi_controlled_toffoli(n):
     #     U_s = qc.to_gate()
     qc.name = "T$"
     return qc
+
 
 def diffuser(nqubits):
     qc = QuantumCircuit(nqubits)
@@ -95,7 +111,7 @@ def partial_diffuser(nqubits, m):
 
 # initialize the Oracle in single state |s> (the state is pure and given in form of [010011...] of len = n)
 # additional qubit should be realized as (qc.initialize([1, -1]/np.sqrt(2), output_qubit))
-def oracle_acilla(state, n: int):
+def oracle_ancilla(state, n: int):
     var_qubits = QuantumRegister(n, name='v')
     output_qubit = QuantumRegister(1, name='out')  # additional qubit
     qc = QuantumCircuit(var_qubits, output_qubit)
@@ -224,14 +240,18 @@ def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=Non
 
     backend = simulator
     result = None
+    shots = 1024
+    if(2**n > 256):
+        shots = 4096
+
     if execution_parameters == None:
-        result = backend.run(optimized_3).result()
+        result = backend.run(optimized_3, shots=shots).result()
     else:
         (coupling_map, basis_gates, noise_model) = execution_parameters
         result = execute(optimized_3, backend,
-                    coupling_map=coupling_map,
-                    basis_gates=basis_gates,
-                    noise_model=noise_model).result()
+                         coupling_map=coupling_map,
+                         basis_gates=basis_gates,
+                         noise_model=noise_model, shots=shots).result()
 
     #     find P_actual
     strState = ''.join(str(e) for e in state)
@@ -248,6 +268,12 @@ def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=Non
             if max_ < counts[strin]:
                 max_ = counts[strin]
     P_actual = res / summ
+    if (P_actual == 0):
+        print("P_actual == 0")
+        print("res: ", res)
+        print("summ: ", summ)
+        print("State: ", strState)
+        print("counts: ", counts)
     S = res / max_
     # print("S: ", S)
     # print(summ, res)
@@ -257,10 +283,11 @@ def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=Non
     return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def hybrid_design_and_test(n, l, m, vector_j, state, simulator):
+def hybrid_design_and_test(n, l, m, vector_j, state, simulator, execution_parameters=None):
     # l - number of classically iterated qubits
     grover_circuit = design_Gq_partial_grover_circuit(n, m, vector_j, state, l)
-    (P_theoretical, P_actual, S, depth, histo) = QPSA_stats(grover_circuit, state[n - m:], n, simulator, False)
+    (P_theoretical, P_actual, S, depth, histo) = QPSA_stats(grover_circuit, state[n - m:], n, simulator, False,
+                                                            execution_parameters=execution_parameters)
     return ((1 / (2 ** l)) * P_theoretical, (1 / (2 ** l)) * P_actual, S, depth, histo)
 
 
@@ -341,16 +368,18 @@ def QPSA_stats(qcircuit, partial_state, n, simulator, measure_first=True, execut
     return (P_theoretical, P_actual, S, depth, plot_histogram(counts, title='counts on quito'))
 
 
-def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state, simulator):
+def design_and_test_two_stage(n, m1, vector_j1, m2, vector_j2, state, simulator, execution_parameters=None):
     first_stage_circuit = design_partial_grover_circuit(n, m1, vector_j1, state)
     partial_state = state[:(n - m1)]
     (P_theoretical_first, P_actual_first, S_first, depth_first, _) = QPSA_stats(first_stage_circuit,
-                                                                                partial_state, n, simulator)
+                                                                                partial_state, n, simulator,
+                                                                                execution_parameters=execution_parameters)
     second_stage_circuit = design_Gq_partial_grover_circuit(n, m2, vector_j2, state, n - m1)
     partial_state = state[(n - m1):]
     (P_theoretical_second, P_actual_second, S_second, depth_second, _) = QPSA_stats(second_stage_circuit,
                                                                                     partial_state,
-                                                                                    n, simulator, False)
+                                                                                    n, simulator, False,
+                                                                                    execution_parameters=execution_parameters)
     #     return (selectivity, R_IBM, depth, "expected deapth") expected deapth defined as goes
     # return (min([S_first, S_second]),
     #         P_actual_first * P_actual_second / (P_theoretical_first * P_theoretical_second),

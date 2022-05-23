@@ -131,3 +131,9 @@ dmypy.json
 # pdfs
 *.pdf
 задачки.txt
+.idea/.name
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/QPSA.iml
+.idea/vcs.xml
