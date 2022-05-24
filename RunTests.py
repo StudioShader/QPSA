@@ -106,17 +106,20 @@ class OtherCases:
 
     def G1D6_iM8(self, i):
         print("Test G1D6_iM8: __________________")
-        result = QPSA.hybrid_design_and_test(n=8, l=1, m=6, vector_j=[0, i], state=self.state8, simulator=self.simulator)
+        result = QPSA.hybrid_design_and_test(n=8, l=1, m=6, vector_j=[0, i], state=self.state8,
+                                             simulator=self.simulator)
         return print_result(result)
 
     def G1D7_iM8(self, i):
         print("Test G1D6_iM8: __________________")
-        result = QPSA.hybrid_design_and_test(n=8, l=1, m=7, vector_j=[0, i], state=self.state8, simulator=self.simulator)
+        result = QPSA.hybrid_design_and_test(n=8, l=1, m=7, vector_j=[0, i], state=self.state8,
+                                             simulator=self.simulator)
         return print_result(result)
 
     def G2D6_iM8(self, i):
         print("Test G2D6_iM8: __________________")
-        result = QPSA.hybrid_design_and_test(n=8, l=2, m=6, vector_j=[0, i], state=self.state8, simulator=self.simulator)
+        result = QPSA.hybrid_design_and_test(n=8, l=2, m=6, vector_j=[0, i], state=self.state8,
+                                             simulator=self.simulator)
         return print_result(result)
 
     def D10_iM10(self, i):
@@ -126,9 +129,9 @@ class OtherCases:
                                            execution_parameters=self.execution_parameters)
         return print_result(result)
 
-    def D6_iM10(self, i):
-        print("Test D6_" + str(i) + "M10: __________________")
-        result_circuit = QPSA.design_partial_grover_circuit(n=10, m=6, vector_j=[i, 0], state=self.state10)
+    def D8_iM10(self, i):
+        print("Test D8_" + str(i) + "M10: __________________")
+        result_circuit = QPSA.design_partial_grover_circuit(n=10, m=8, vector_j=[i, 0], state=self.state10)
         result = QPSA.classic_grover_stats(result_circuit, self.state10, 10, self.simulator,
                                            execution_parameters=self.execution_parameters)
         return print_result(result)
@@ -136,32 +139,42 @@ class OtherCases:
     def change_exec_params(self, execution_parameters):
         self.execution_parameters = execution_parameters
 
+
 def _D6_iM6(test_class, i):
     return test_class.D6_iM6(i)
+
 
 def _D4_iM6(test_class, i):
     return test_class.D4_iM6(i)
 
+
 def _D4_i1M2_D4_i2M4(test_class, i1, i2):
     return test_class.D4_i1M2_D4_i2M4(i1, i2)
+
 
 def _D8_iM8(test_class, i):
     return test_class.D8_iM8(i)
 
+
 def _D6_iM8(test_class, i):
     return test_class.D6_iM8(i)
+
 
 def _G1D6_iM8(test_class, i):
     return test_class.G1D6_iM8(i)
 
+
 def _G1D7_iM8(test_class, i):
     return test_class.G1D7_iM8(i)
+
 
 def _G2D6_iM8(test_class, i):
     return test_class.G2D6_iM8(i)
 
+
 def _D10_iM10(test_class, i):
     return test_class.D10_iM10(i)
 
-def _D6_iM10(test_class, i):
-    return test_class.D6_iM10(i)
+
+def _D8_iM10(test_class, i):
+    return test_class.D8_iM10(i)

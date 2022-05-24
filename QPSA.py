@@ -234,7 +234,7 @@ def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=Non
     #     now we add measures to our circuit
     qcircuit.measure(range(n), range(n - 1, -1, -1))
     optimized_3 = transpile(qcircuit, backend=simulator, seed_transpiler=11, optimization_level=3)
-    print('gates = ', optimized_3.count_ops())
+    # print('gates = ', optimized_3.count_ops())
     # print('depth = ', optimized_3.depth())
     depth = optimized_3.depth()
 
