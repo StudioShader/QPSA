@@ -38,6 +38,7 @@ def both(N):
     qc.name = "Bc$"
     return qc
 
+
 def multi_controlled_toffoli(n, N):
     #     (n-1) - number of controlled qubits
     #     N - number of resets in a single reset operation
@@ -54,7 +55,7 @@ def multi_controlled_toffoli(n, N):
 
 
 def diffuser(nqubits):
-    qc = QuantumCircuit(nqubits)
+    qc = QuantumCircuit(nqubits + 1)
     # Apply transformation |s> -> |00..0> (H-gates)
     for qubit in range(nqubits):
         qc.h(qubit)
@@ -63,7 +64,8 @@ def diffuser(nqubits):
         qc.x(qubit)
     # Do multi-controlled-Z gate
     qc.h(nqubits - 1)
-    qc.mct(list(range(nqubits - 1)), nqubits - 1)  # multi-controlled-toffoli
+    # qc.mct(list(range(nqubits - 1)), nqubits - 1)  # multi-controlled-toffoli
+    qc.append(multi_controlled_toffoli(nqubits - 1, 1), list(range(nqubits - 1)) + [nqubits - 1, nqubits])
     qc.h(nqubits - 1)
     # Apply transformation |11..1> -> |00..0>
     for qubit in range(nqubits):
@@ -78,7 +80,7 @@ def diffuser(nqubits):
 
 
 def partial_diffuser(nqubits, m):
-    qc = QuantumCircuit(nqubits)
+    qc = QuantumCircuit(nqubits + 1)
     # Apply transformation |s> -> |00..0> (H-gates)
     for qubit in range((nqubits - m), nqubits):
         qc.h(qubit)
@@ -87,7 +89,9 @@ def partial_diffuser(nqubits, m):
         qc.x(qubit)
     # Do multi-controlled-Z gate
     qc.h(nqubits - 1)
-    qc.mct(list(range((nqubits - m), nqubits - 1)), nqubits - 1)  # multi-controlled-toffoli
+    # qc.mct(list(range((nqubits - m), nqubits - 1)), nqubits - 1)  # multi-controlled-toffoli
+    qc.append(multi_controlled_toffoli(len(list(range((nqubits - m), nqubits - 1))), 1),
+              list(range((nqubits - m), nqubits - 1)) + [nqubits - 1, nqubits])
     qc.h(nqubits - 1)
     # Apply transformation |11..1> -> |00..0>
     for qubit in range((nqubits - m), nqubits):
@@ -133,7 +137,7 @@ def oracle_ancilla(state, n: int):
 
 
 def oracle(state, n: int):
-    var_qubits = QuantumRegister(n, name='v')
+    var_qubits = QuantumRegister(n + 1, name='v')
     qc = QuantumCircuit(var_qubits)
     for i in range(n):
         if state[i] == 0:
@@ -143,7 +147,9 @@ def oracle(state, n: int):
     # Flip 'output' bit if all clauses are satisfied
     # Do multi-controlled-Z gate
     qc.h(n - 1)
-    qc.mct(list(range(n - 1)), n - 1)  # multi-controlled-toffoli
+    # qc.mct(list(range(n - 1)), n - 1)  # multi-controlled-toffoli
+    qc.append(multi_controlled_toffoli(len(list(range(n - 1))), 1),
+              list(range(n - 1)) + [n - 1, n])
     qc.h(n - 1)
 
     for i in range(n):
@@ -156,9 +162,9 @@ def oracle(state, n: int):
 
 
 def grover_operator(n, state):
-    grover = QuantumCircuit(n + 1)
-    grover.append(oracle(state, n), range(n))
-    grover.append(diffuser(n), range(n))
+    grover = QuantumCircuit(n + 2)
+    grover.append(oracle(state, n), range(n+1))
+    grover.append(diffuser(n), range(n+1))
     Grover = grover.to_gate()
     Grover.name = "G_" + str(n)
     return Grover
@@ -174,12 +180,12 @@ def local_grover_operator(n, m, state):
 
 
 def design_grover_circuit(n, operator_count, state):
-    grover_circuit = QuantumCircuit(n + 1, n)
+    grover_circuit = QuantumCircuit(n + 2, n)
     grover_circuit = initialize_s(grover_circuit, range(n))
     grover_circuit.x(n)
     grover_circuit.h(n)
     for i in range(operator_count):
-        grover_circuit.append(grover_operator(n, state), range(n + 1))
+        grover_circuit.append(grover_operator(n, state), range(n + 2))
     return grover_circuit
 
 
@@ -241,7 +247,7 @@ def classic_grover_stats(qcircuit, state, n, simulator, execution_parameters=Non
     backend = simulator
     result = None
     shots = 1024
-    if(2**n > 256):
+    if (2 ** n > 256):
         shots = 4096
 
     if execution_parameters == None:

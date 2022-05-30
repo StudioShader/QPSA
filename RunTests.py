@@ -7,12 +7,12 @@ def print_result(result):
     (P_theoretical, P_actual, selectivity, depth, histogram) = result
 
     # uncomment these if you want to see precise data about tests
-    # print("P_theoretical: ", P_theoretical)
-    # print("P_actual: ", P_actual)
-    # print("selectivity: ", selectivity)
-    # print("depth: ", depth)
-    # print("R_IBM: ", P_actual / P_theoretical)
-    # print("expected depth: ", depth / P_actual)
+    print("P_theoretical: ", P_theoretical)
+    print("P_actual: ", P_actual)
+    print("selectivity: ", selectivity)
+    print("depth: ", depth)
+    print("R_IBM: ", P_actual / P_theoretical)
+    print("expected depth: ", depth / P_actual)
 
     gathered = [P_theoretical, P_actual, selectivity, depth, P_actual / P_theoretical, depth / P_actual]
     return gathered
@@ -28,6 +28,13 @@ class ThreeQubitCases:
         self.state = state
         self.simulator = simulator
         self.execution_parameters = execution_parameters
+
+    def SpecialCase(self):
+        print("Test D3M3: __________________")
+        result_circuit = QPSA.design_grover_circuit(self.n, 1, self.state)
+        result = QPSA.classic_grover_stats(result_circuit, self.state, self.n, self.simulator,
+                                           execution_parameters=self.execution_parameters)
+        return print_result(result)
 
     def D2M3(self):
         print("Test D2M3: __________________")
