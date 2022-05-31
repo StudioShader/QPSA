@@ -130,6 +130,7 @@ dmypy.json
 
 # pdfs
 *.pdf
+*.pptx
 задачки.txt
 .idea/.name
 .idea/inspectionProfiles/profiles_settings.xml
@@ -137,3 +138,9 @@ dmypy.json
 .idea/modules.xml
 .idea/QPSA.iml
 .idea/vcs.xml
+
+# additional hand made files
+/.idea
+.jovianrc
+.gitignore
+/reset.docx
