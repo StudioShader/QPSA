@@ -43,7 +43,7 @@
   \begin{center}
     \textbf{Ogloblin Ivan Semenovich}
 
-    {\Large\textbf{ Study of the effect of noise on efficient quantum search algorithms}}
+    {\Large\textbf{ Study of the Effect of Noise on Efficient Quantum Search Algorithms}}
 
      {\small June 2022 course work}
 
@@ -92,7 +92,7 @@ of the Grover’s search algorithm on the NISQ processors\footnote{\href{https:/
 	\begin{itemize}
 		\item Using Qiskit and IBMQ\footnote{\href{https://github.com/StudioShader/QPSA}{public repository}}
 		\item Using thermal relaxation  model\footnote{\href{https://github.com/Qiskit/qiskit-tutorials/blob/master/tutorials/simulators/3_building_noise_models.ipynb}{qiskit thermal relaxation noise model}}
-		\item Error coupling map on qubits as on the real device "Melbourne"
+		\item Error/coupling map on qubits as on the real device "Melbourne"
 		\item Toffoli gate implementation through Qiskit function .mct()\footnote{\href{https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.mct.html}{.mct() function}}
 	\end{itemize}
 \end{frame}
@@ -120,13 +120,13 @@ of the Grover’s search algorithm on the NISQ processors\footnote{\href{https:/
 \begin{frame}{Tests on 8 qubits: results}
 	\begin{itemize}	
 		\item the number of Grover operator calls for 8 qubits should be ${\frac{\Pi\sqrt{2^8}}{4}} \approx 12$
-		\item with such number of Grover operators it already takes much time to test an algorithm. Not only because of it's depth, but also because of the large minimum sufficient number of shots. And it is basically useless to test an algorithm with more than four Grover operators, because the result won't be much different from pure noise
-		\item All tests were done on intel i5 8th gen processor 
+		\item With such a number of Grover operators it already takes a lot of time to test an algorithm. Not only because of it's depth, but also because of the large minimum of sufficient number of shots. And it is basically useless to test an algorithm with more than four Grover operators, because the result won't be much different from pure noise
+		\item All tests were done on Intel i5 8th gen processor 
 	\end{itemize}	
 \end{frame}
 
 \begin{frame}{Noise parameter}
-	Noise parameter scales the constants T1 and T2 in thermal relaxation noise model\footnote{\href{https://arxiv.org/pdf/2101.02109.pdf}{T1/T2 thermal relaxation noise model}}. This parameter describes the physical ability to store and apply operations on qubits without unnecessary noise. In order to find minimum sufficient value for the noise parameter, we want to test algorithms on different number of qubits and much more different values of noise parameter. 
+	Noise parameter scales the constants T1 and T2 in thermal relaxation noise model\footnote{\href{https://arxiv.org/pdf/2101.02109.pdf}{T1/T2 thermal relaxation noise model}}. This parameter describes the physical ability to store and apply operations on qubits without unnecessary noise. In order to find the minimum sufficient value for the noise parameter, we want to test algorithms on a different number of qubits and many extremely different values of noise parameter. 
 \end{frame}
 
 \begin{frame}{10 qubit tests}
@@ -145,7 +145,7 @@ of the Grover’s search algorithm on the NISQ processors\footnote{\href{https:/
 
 \begin{itemize}
 \item We implemented a useful playground for tests with different noise models
-\item Conducted a set of experiments to show limitations of efficient quantum search algorithm
+\item Conducted a set of experiments to show the limitations of efficient quantum search algorithms and the limitations of their quantum simulation on regular computer
 \end{itemize}
 
 \vspace{5mm}\hrule\vspace{5mm}
