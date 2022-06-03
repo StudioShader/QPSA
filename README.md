@@ -3,6 +3,6 @@ Code provided for article Zhang, K., Rao, P., Yu, K., Lim, H., & Korepin, V. (20
 To run code:
 1. clone onto your local device
 2. open Grover.ipynb
-3. make sure all the necessary libraries are downloaded
+3. make sure all the necessary libraries are installed in your environment
 4. run Grover.ipynb
   It will take some time to run all cells. Pre-baked results located in ipynb-ckeckpoints
