@@ -91,9 +91,9 @@ of the Grover’s search algorithm on the NISQ processors\footnote{\href{https:/
 \begin{frame}{Implementation}
 	\begin{itemize}
 		\item Using Qiskit and IBMQ\footnote{\href{https://github.com/StudioShader/QPSA}{public repository}}
-		\item Using thermal relaxation  model\footnote{\href{https://github.com/Qiskit/qiskit-tutorials/blob/master/tutorials/simulators/3_building_noise_models.ipynb}{T1/T2 thermal relaxation}}
-		\item Coupling map of errors on qubits as on the real device "Melbourne"
-		\item Toffoli gate implementation through Qiskit function "mct"
+		\item Using thermal relaxation  model\footnote{\href{https://github.com/Qiskit/qiskit-tutorials/blob/master/tutorials/simulators/3_building_noise_models.ipynb}{qiskit thermal relaxation noise model}}
+		\item Error coupling map on qubits as on the real device "Melbourne"
+		\item Toffoli gate implementation through Qiskit function .mct()\footnote{\href{https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.mct.html}{.mct() function}}
 	\end{itemize}
 \end{frame}
 
@@ -109,85 +109,53 @@ of the Grover’s search algorithm on the NISQ processors\footnote{\href{https:/
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Задача 2: результаты измерений в таблице}
-\centering
-\begin{tabular}{lccc}
-    Имя & Работа 1 & Работа 2 & Итог \\
-\hline\hline
-    Алиса & 8.0 & 9.0 & 8.5 \\
-    Боб & 9.0 & 9.8 & 9.4 \\
-    Чак & 9.1 & 9.3 & 9.2 \\
-\end{tabular}
-
-\begin{block}{Пояснения к таблице}
-  \begin{itemize}
-  \item Таблицы могут требовать пояснений.
-  \item Что это за величины? Откуда они взялись?
-  \item Какие выводы можно сделать?
-  \end{itemize}
-\end{block}
-
+\begin{frame}{Tests on 8 qubits}
+		\includegraphics[width=14cm]{images/8_qubit_tests1.png}
 \end{frame}
 
-
-\begin{frame}
-\frametitle{Задача 2: результаты сравнения с конкурентами\footnote{Понятна ли ваша диаграмма? Не забыли ли вы легенду?}\footnote{Контрастно ли изображение? Помните, на проекторе всё может выглядеть хуже.}}
-\begin{center}
-\includegraphics[width=11cm]{images/graph.png}
-\end{center}
+\begin{frame}{Tests on 8 qubits}
+	\includegraphics[width=14cm]{images/8_qubit_tests2.png}
 \end{frame}
 
-\begin{frame}
-\frametitle{Задача 3: основные трудности}
+\begin{frame}{Tests on 8 qubits: results}
+	\begin{itemize}	
+		\item the number of Grover operator calls for 8 qubits should be ${\frac{\Pi\sqrt{2^8}}{4}} \approx 12$
+		\item with such number of Grover operators it already takes much time to test an algorithm. Not only because of it's depth, but also because of the large minimum sufficient number of shots. And it is basically useless to test an algorithm with more than four Grover operators, because the result won't be much different from pure noise
+		\item All tests were done on intel i5 8th gen processor 
+	\end{itemize}	
+\end{frame}
+
+\begin{frame}{Noise parameter}
+	Noise parameter scales the constants T1 and T2 in thermal relaxation noise model\footnote{\href{https://arxiv.org/pdf/2101.02109.pdf}{T1/T2 thermal relaxation noise model}}. This parameter describes the physical ability to store and apply operations on qubits without unnecessary noise. In order to find minimum sufficient value for the noise parameter, we want to test algorithms on different number of qubits and much more different values of noise parameter. 
+\end{frame}
+
+\begin{frame}{10 qubit tests}
+	 \includegraphics[width=14cm]{images/10_qubit_tests.png}
+\end{frame}
+
+\begin{frame}{10 qubit tests: results}
+	\begin{itemize}
+		\item There is a definite value of noise parameter, after which there is no visible decrease of expected depth. We want to know how this value scales with the number of qubits
+		\item Unfortunately we only have so much processing power, it barely reaches the 10th qubit front. Further experiments should be carried out on processors more adapted for such quantum simulations
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering, plain]
+\frametitle{Summary}
+
 \begin{itemize}
-\item Мы всё классно сделали, но рецензенты STOC сформулировали ряд претензий к~работе, обозвали нас идиотами и отказались пускать на конференцию.
-\item Все замечания были исправлены, попробуем FOCS\footnote{Не забывайте про нежелательность англицизмов и аббревиатур.}!
+\item We implemented a useful playground for tests with different noise models
+\item Conducted a set of experiments to show limitations of efficient quantum search algorithm
 \end{itemize}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Дополнительный слайд по работе в целом\footnote{Кстати, слайды с длинными перечислениями выглядят плохо. Старайтесь их избегать.}}
-\begin{itemize}
-\item Освоенные и применённые технологии
-\item Информация о внедрении
-\item Полученные в ходе выполнения работы навыки
-\item Вынесенные уроки
-\item Реальные планы на будущее (не надо фантазировать!)
-\item Ссылки на цитированную литературу --- их можно вынести в конец слайдов, но во время доклада не показывать.
-\end{itemize}
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Результаты работы}
-
-\begin{enumerate}
-\item Разработан полиномиальный алгоритм решения задачи коммивояжёра.
-\item Программная реализация демонстрирует высочайшую производительность и превосходит все известные аналоги.
-\item Результаты подготовлены для представления на~FOCS.
-\end{enumerate}
 
 \vspace{5mm}\hrule\vspace{5mm}
 
 \begin{center}
-Имя, фамилия и контакты автора,\\ссылка на материалы работы, QR-код.
+Ivan Ogloblin\\
+studioshader2018@gmail.com \\
+\href{https://github.com/StudioShader/QPSA}{\textcolor{blue}{github repository}}
 \end{center}
 
 \end{frame}
-
-\begin{frame}[noframenumbering,plain]
-\frametitle{}
-\begin{center}
-  \Huge Спасибо за внимание!
-
-  Ваши вопросы?
-
-  {\color{red}Этот слайд не нужен! Удалите его\footnote{Сноски на слайдах тоже удалите: не нужно усложнять их структуру и содержимое. Не~забывайте, что многое можно просто сказать словами.}!}
-\end{center}
-\end{frame}
-
-
 
 \end{document}

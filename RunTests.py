@@ -13,8 +13,10 @@ def print_result(result):
     # print("depth: ", depth)
     # print("R_IBM: ", P_actual / P_theoretical)
     # print("expected depth: ", depth / P_actual)
-
-    gathered = [P_theoretical, P_actual, selectivity, depth, P_actual / P_theoretical, depth / P_actual]
+    if (P_actual == 0):
+        gathered = [P_theoretical, P_actual, selectivity, depth, P_actual / P_theoretical, None]
+    else:
+        gathered = [P_theoretical, P_actual, selectivity, depth, P_actual / P_theoretical, depth / P_actual]
     return gathered
     # print("histogram: ", histogram)
     # plot_histogram(histogram)
