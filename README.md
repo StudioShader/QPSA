@@ -9,4 +9,4 @@ To run code:
 4. run Grover.ipynb
 
 
-  It will take some time to run all cells. Pre-baked results located in ipynb-ckeckpoints
+  It will take some time to run all cells. Pre-baked results located in .ipynb_ckeckpoints
